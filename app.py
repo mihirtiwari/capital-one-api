@@ -11,12 +11,44 @@ access_token = os.environ['TOKEN']
 BASE_URL = 'https://api.yelp.com/v3/'
 DAYS_OF_THE_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+def parse_address(address):
+    a = ""
+    for x in range(0,len(address)):
+        if x is not len(address) - 1:
+            a += address[x] + ', '
+        else:
+            a += address[x]
+
+    return a
+
+def parse_business_info(businesses):
+    info = []
+    for x in range(0, len(businesses)):
+        phone = businesses[x]['display_phone']
+        id = businesses[x]['id']
+        price = businesses[x]['price']
+        address = parse_address(businesses[x]['location']['display_address'])
+        name = businesses[x]['name']
+        rating = businesses[x]['rating']
+
+        bus = {
+            'name': name,
+            'phone': phone,
+            'id': id,
+            'price': price,
+            'address': address,
+            'rating': rating
+        }
+
+        info.append(bus)
+
+    return info
+
 @app.route('/')
 def index():
     return "Hello World!"
 
 #all businesses in area based on town location
-#TODO: Parse business info properly
 @app.route('/businesses/location=<location>', methods=['GET'])
 def businesses_location(location):
     headers = {
@@ -24,12 +56,12 @@ def businesses_location(location):
         'Authorization': 'Bearer ' + access_token
     }
 
-    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&limit=30', headers=headers)
+    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&limit=30&categories ="food, All"', headers=headers)
+    r = json.loads(req.text)
 
-    return jsonify(req.text)
+    return jsonify(parse_business_info(r['businesses']))
 
 #all businesses in area based on latitude and longitude
-#TODO: Parse business info properly
 @app.route('/businesses/longitude=<longitude>&latitude=<latitude>', methods=['GET'])
 def businesses_lat_long(latitude, longitude):
     headers = {
@@ -37,9 +69,10 @@ def businesses_lat_long(latitude, longitude):
         'Authorization': 'Bearer ' + access_token
     }
 
-    req = requests.get(BASE_URL + 'businesses/search?longitude=' + longitude + '&latitude=' + latitude + '&limit=30', headers=headers)
+    req = requests.get(BASE_URL + 'businesses/search?longitude=' + longitude + '&latitude=' + latitude + '&limit=30&categories ="food, All"', headers=headers)
+    r = json.loads(req.text)
 
-    return jsonify(req.text)
+    return jsonify(parse_business_info(r['businesses']))
 
 #gives specific review with 3 users
 @app.route('/reviews/id=<id>', methods=['GET'])
