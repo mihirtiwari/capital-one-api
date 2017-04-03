@@ -2,8 +2,11 @@ from flask import Flask, jsonify, request
 import requests, json
 import os
 from datetime import datetime
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
 app.config['ACCESS_TOKEN'] = os.environ['TOKEN']
 
 access_token = os.environ['TOKEN']
@@ -23,21 +26,30 @@ def parse_address(address):
 
 def parse_business_info(businesses):
     info = []
+    id = ''
     for x in range(0, len(businesses)):
         phone = businesses[x]['display_phone']
+        if len(phone) is 0:
+            phone = 'None'
         id = businesses[x]['id']
-        price = businesses[x]['price']
+        # price = businesses[x]['price']
         address = parse_address(businesses[x]['location']['display_address'])
         name = businesses[x]['name']
         rating = businesses[x]['rating']
+        image = businesses[x]['image_url'];
+        url = businesses[x]['url']
+        closed = businesses[x]['is_closed']
 
         bus = {
             'name': name,
             'phone': phone,
             'id': id,
-            'price': price,
+            # 'price': price,
             'address': address,
-            'rating': rating
+            'rating': rating,
+            'image': image,
+            'url': url,
+            'closed': closed,
         }
 
         info.append(bus)
@@ -48,6 +60,43 @@ def parse_business_info(businesses):
 def index():
     return "Hello World!"
 
+
+@app.route('/businesses/location=<location>&price=<price>&radius=<radius>&open=<open>&filters=<filters>', methods=['GET'])
+def filter(price, open, filters,radius, location):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+    full_url = 'businesses/search?location=' + location + '&limit=20&categories ="food, All"'
+
+    if price is not 0:
+        full_url += '&price=' + price
+
+    if open is not 'false':
+        full_url += '&open_now=true'
+
+    if filters is not '':
+        full_url += '&attributes=' + filters
+
+    if radius is not 0:
+        full_url += '&radius=' + radius
+
+    req = requests.get(BASE_URL + full_url, headers=headers)
+    r = json.loads(req.text)
+
+    try:
+        r = parse_business_info(r['businesses'])
+        return jsonify(r);
+    except:
+        r = {
+              'name': 'Error! Please try again! ',
+              'phone': 'Error! Please try again!',
+              'address': 'Error! Please try again!',
+              'rating': 'Error! Please try again!'
+        }
+        return jsonify(r);
+
 #all businesses in area based on town location
 @app.route('/businesses/location=<location>', methods=['GET'])
 def businesses_location(location):
@@ -56,10 +105,23 @@ def businesses_location(location):
         'Authorization': 'Bearer ' + access_token
     }
 
-    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&limit=30&categories ="food, All"', headers=headers)
+    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&limit=20&categories ="food, All"', headers=headers)
     r = json.loads(req.text)
 
-    return jsonify(parse_business_info(r['businesses']))
+    print('we in the other one bitch')
+
+    try:
+        r = parse_business_info(r['businesses'])
+        return jsonify(r)
+    except:
+        r = {
+              'name': 'Error! Please try again! ',
+              'phone': 'Error! Please try again!',
+              'address': 'Error! Please try again!',
+              'rating': 'Error! Please try again!'
+        }
+        return jsonify(r);
+
 
 #all businesses in area based on latitude and longitude
 @app.route('/businesses/longitude=<longitude>&latitude=<latitude>', methods=['GET'])
@@ -72,7 +134,18 @@ def businesses_lat_long(latitude, longitude):
     req = requests.get(BASE_URL + 'businesses/search?longitude=' + longitude + '&latitude=' + latitude + '&limit=30&categories ="food, All"', headers=headers)
     r = json.loads(req.text)
 
-    return jsonify(parse_business_info(r['businesses']))
+    try:
+        r = parse_business_info(r['businesses'])
+        return jsonify(r)
+    except:
+        r = {
+              'name': 'Error! Please try again! ',
+              'phone': 'Error! Please try again!',
+              'address': 'Error! Please try again!',
+              'rating': 'Error! Please try again!'
+        }
+
+        return jsonify(r);
 
 #gives specific review with 3 users
 @app.route('/reviews/id=<id>', methods=['GET'])
