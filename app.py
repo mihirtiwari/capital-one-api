@@ -85,7 +85,7 @@ def businesses_location(location):
 
     req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&sort_by=rating&limit=20&categories ="food, All"', headers=headers)
     r = json.loads(req.text)
-    
+
     try:
         r = parse_business_info(r['businesses'])
         return jsonify(r)
@@ -239,4 +239,4 @@ def business_details(id):
     return jsonify(rating)
 
 if __name__ == "__main__":
-    app.run(debug=True);
+    app.run(debug=True,port=os.environ['PORT']);
