@@ -32,38 +32,23 @@ def parse_business_info(businesses):
         if len(phone) is 0:
             phone = 'None'
         id = businesses[x]['id']
-        # price = businesses[x]['price']
         address = parse_address(businesses[x]['location']['display_address'])
         name = businesses[x]['name']
         rating = businesses[x]['rating']
         image = businesses[x]['image_url'];
         url = businesses[x]['url'],
         closed = businesses[x]['is_closed'],
-        # transactions = businesses[x]['transactions'],
         num_reviews = businesses[x]['review_count']
-        # temp = ''
-
-
-        # if len(transactions) is 1:
-        #     temp = capitalize(transactions[0])
-        # else:
-        #     for x in range(0, len(transactions)):
-        #         if x is not len(transactions) - 1:
-        #             temp += capitalize(transactions[x]) + ' and '
-        #         else:
-        #             temp += capitalize(transactions[x])
 
         bus = {
             'name': name,
             'phone': phone,
             'id': id,
-            # 'price': price,
             'address': address,
             'rating': rating,
             'image': image,
             'url': url,
             'closed': closed,
-            # 'transactions': temp,
             'num_reviews': num_reviews,
         }
 
