@@ -37,8 +37,21 @@ def parse_business_info(businesses):
         name = businesses[x]['name']
         rating = businesses[x]['rating']
         image = businesses[x]['image_url'];
-        url = businesses[x]['url']
-        closed = businesses[x]['is_closed']
+        url = businesses[x]['url'],
+        closed = businesses[x]['is_closed'],
+        # transactions = businesses[x]['transactions'],
+        num_reviews = businesses[x]['review_count']
+        # temp = ''
+
+
+        # if len(transactions) is 1:
+        #     temp = capitalize(transactions[0])
+        # else:
+        #     for x in range(0, len(transactions)):
+        #         if x is not len(transactions) - 1:
+        #             temp += capitalize(transactions[x]) + ' and '
+        #         else:
+        #             temp += capitalize(transactions[x])
 
         bus = {
             'name': name,
@@ -50,6 +63,8 @@ def parse_business_info(businesses):
             'image': image,
             'url': url,
             'closed': closed,
+            # 'transactions': temp,
+            'num_reviews': num_reviews,
         }
 
         info.append(bus)
@@ -60,34 +75,20 @@ def parse_business_info(businesses):
 def index():
     return "Hello World!"
 
-
-@app.route('/businesses/location=<location>&price=<price>&radius=<radius>&open=<open>&filters=<filters>', methods=['GET'])
-def filter(price, open, filters,radius, location):
+#all businesses in area based on town location
+@app.route('/businesses/location=<location>', methods=['GET'])
+def businesses_location(location):
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + access_token
     }
 
-    full_url = 'businesses/search?location=' + location + '&limit=20&categories ="food, All"'
-
-    if price is not 0:
-        full_url += '&price=' + price
-
-    if open is not 'false':
-        full_url += '&open_now=true'
-
-    if filters is not '':
-        full_url += '&attributes=' + filters
-
-    if radius is not 0:
-        full_url += '&radius=' + radius
-
-    req = requests.get(BASE_URL + full_url, headers=headers)
+    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&sort_by=rating&limit=20&categories ="food, All"', headers=headers)
     r = json.loads(req.text)
-
+    
     try:
         r = parse_business_info(r['businesses'])
-        return jsonify(r);
+        return jsonify(r)
     except:
         r = {
               'name': 'Error! Please try again! ',
@@ -97,22 +98,36 @@ def filter(price, open, filters,radius, location):
         }
         return jsonify(r);
 
-#all businesses in area based on town location
-@app.route('/businesses/location=<location>', methods=['GET'])
-def businesses_location(location):
+@app.route('/filters', methods=['GET'])
+def filter():
     headers = {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + access_token
     }
 
-    req = requests.get(BASE_URL + 'businesses/search?location=' + location + '&limit=20&categories ="food, All"', headers=headers)
-    r = json.loads(req.text)
+    full_url = 'businesses/search?location=' + request.values.get('location') + '&sort_by=rating&limit=20&categories ="food, All"'
+    price = int(request.values.get('price'))
+    radius = int(request.values.get('radius'))
 
-    print('we in the other one bitch')
+    if price is not 0 and request.values.get('price') is not None:
+        full_url += '&price=' + request.values.get('price')
+
+    if request.values.get('open') is not 'false' and request.values.get('open') is not None:
+        full_url += '&open_now=true'
+
+    if request.values.get('filters') is not '' and request.values.get('filters') is not None:
+        full_url += '&attributes=' + request.values.get('filters')
+
+    if radius is not 0 and request.values.get('radius') is not None:
+        full_url += '&radius=' + request.values.get('radius')
+
+    print(full_url)
+    req = requests.get(BASE_URL + full_url, headers=headers)
+    r = json.loads(req.text)
 
     try:
         r = parse_business_info(r['businesses'])
-        return jsonify(r)
+        return jsonify(r);
     except:
         r = {
               'name': 'Error! Please try again! ',
@@ -131,7 +146,7 @@ def businesses_lat_long(latitude, longitude):
         'Authorization': 'Bearer ' + access_token
     }
 
-    req = requests.get(BASE_URL + 'businesses/search?longitude=' + longitude + '&latitude=' + latitude + '&limit=30&categories ="food, All"', headers=headers)
+    req = requests.get(BASE_URL + 'businesses/search?longitude=' + longitude + '&latitude=' + latitude + '&sort_by=rating&limit=20&categories ="food, All"', headers=headers)
     r = json.loads(req.text)
 
     try:
