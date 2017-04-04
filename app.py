@@ -121,7 +121,6 @@ def filter():
     if radius is not 0 and request.values.get('radius') is not None:
         full_url += '&radius=' + request.values.get('radius')
 
-    print(full_url)
     req = requests.get(BASE_URL + full_url, headers=headers)
     r = json.loads(req.text)
 
